@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/flyteorg/datacatalog v1.0.43
 	github.com/flyteorg/flyteadmin v1.1.77
-	github.com/flyteorg/flytepropeller v1.1.69
+	github.com/flyteorg/flytepropeller v1.1.67
 	github.com/flyteorg/flytestdlib v1.0.16
 	github.com/golang/glog v1.0.0
 	github.com/spf13/cobra v1.4.0
@@ -72,8 +72,8 @@ require (
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
-	github.com/flyteorg/flyteidl v1.3.9 // indirect
-	github.com/flyteorg/flyteplugins v1.0.40 // indirect
+	github.com/flyteorg/flyteidl v1.3.8-0.20230220163651-683de03df79a // indirect
+	github.com/flyteorg/flyteplugins v1.0.38-0.20230301193051-825fe1803218 // indirect
 	github.com/flyteorg/stow v0.3.6 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
