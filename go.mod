@@ -3,10 +3,10 @@ module github.com/flyteorg/flyte
 go 1.19
 
 require (
-	github.com/flyteorg/datacatalog v1.0.44
-	github.com/flyteorg/flyteadmin v1.1.88
-	github.com/flyteorg/flytepropeller v1.1.77
-	github.com/flyteorg/flytestdlib v1.0.16
+	github.com/flyteorg/datacatalog v1.0.47-0.20230420194602-54ee58b25027
+	github.com/flyteorg/flyteadmin v1.1.91-0.20230420010403-2cb96abcc2c5
+	github.com/flyteorg/flytepropeller v1.1.83
+	github.com/flyteorg/flytestdlib v1.0.17-0.20230320195919-90331d171e2a
 	github.com/golang/glog v1.0.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
@@ -72,16 +72,17 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/flyteorg/flyteidl v1.3.14 // indirect
-	github.com/flyteorg/flyteplugins v1.0.45 // indirect
+	github.com/flyteorg/flyteplugins v1.0.49 // indirect
 	github.com/flyteorg/stow v0.3.6 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-gormigrate/gormigrate/v2 v2.0.0 // indirect
+	github.com/go-gormigrate/gormigrate/v2 v2.0.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
 	github.com/go-redis/redis v6.15.7+incompatible // indirect
+	github.com/go-sql-driver/mysql v1.7.0 // indirect
 	github.com/go-test/deep v1.0.7 // indirect
 	github.com/goccy/go-json v0.4.8 // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
@@ -203,8 +204,9 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.2-0.20210529014059-a5c7eec3c614 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	gorm.io/driver/sqlite v1.1.1 // indirect
-	gorm.io/gorm v1.24.1-0.20221019064659-5dd2bb482755 // indirect
+	gorm.io/driver/mysql v1.4.7 // indirect
+	gorm.io/driver/sqlite v1.4.4 // indirect
+	gorm.io/gorm v1.25.0 // indirect
 	k8s.io/api v0.24.1 // indirect
 	k8s.io/apiextensions-apiserver v0.24.1 // indirect
 	k8s.io/apimachinery v0.24.1 // indirect
