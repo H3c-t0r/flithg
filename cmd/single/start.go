@@ -17,6 +17,7 @@ import (
 	"github.com/flyteorg/flytestdlib/contextutils"
 	"github.com/flyteorg/flytestdlib/promutils/labeled"
 	"github.com/flyteorg/flytestdlib/storage"
+	"github.com/flyteorg/flytestdlib/telemetryutils"
 
 	"github.com/flyteorg/flytepropeller/pkg/signals"
 	webhookEntrypoint "github.com/flyteorg/flytepropeller/pkg/webhook"
@@ -166,6 +167,14 @@ var startCmd = &cobra.Command{
 		ctx := context.Background()
 		g, childCtx := errgroup.WithContext(ctx)
 		cfg := GetConfig()
+
+		for _, serviceName := range []string{telemetryutils.AdminClientTracer, telemetryutils.BlobstoreClientTracer,
+			telemetryutils.DataCatalogClientTracer, telemetryutils.FlytePropellerTracer, telemetryutils.K8sClientTracer} {
+			if err := telemetryutils.RegisterTracerProvider(serviceName, telemetryutils.GetConfig()) ; err != nil {
+				logger.Errorf(ctx, "Failed to create telemetry tracer provider. %v", err)
+				return err
+			}
+		}
 
 		if !cfg.Admin.Disabled {
 			g.Go(func() error {
