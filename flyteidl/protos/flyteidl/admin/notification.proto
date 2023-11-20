@@ -25,3 +25,9 @@ message EmailMessage {
     // This populates the BODY field.
     string body = 4;
 }
+
+// Represents the content that will be sent to a webhook endpoint.
+message WebhookMessage {
+    // The content of webhook request.
+    string body = 1;
+}
