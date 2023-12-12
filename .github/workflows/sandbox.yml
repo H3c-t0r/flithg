@@ -15,7 +15,7 @@ on:
 
 jobs:
   trigger-sandbox-build:
-    runs-on: ubuntu-latest
+    runs-on: union-k8s-runner
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -64,7 +64,7 @@ jobs:
           file: docker/sandbox/Dockerfile
 
   trigger-sandbox-lite-build:
-    runs-on: ubuntu-latest
+    runs-on: union-k8s-runner
     steps:
       - name: Checkout
         uses: actions/checkout@v2
