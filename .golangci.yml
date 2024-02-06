@@ -1,0 +1,43 @@
+run:
+  skip-files:
+    # because we're skipping TLS verification - for now
+    - cmd/entrypoints/serve.go
+    - gen
+    - mocks
+    - _test.go$
+    # Single-binary has a few exceptions
+    - cmd/single
+    - cmd/main.go
+
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - gas
+    - gci
+    - goconst
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - revive
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+
+linters-settings:
+  gci:
+    custom-order: true
+    sections:
+      - standard
+      - default
+      - prefix(github.com/flyteorg)
+    skip-generated: true
+  revive:
+    rules:
+      - name: unused-parameter
+        disabled: true

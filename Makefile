@@ -108,10 +108,15 @@ build_native_flyte:
 .PHONY: go-tidy
 go-tidy:
 	go mod tidy
-	make -C datacatalog go-tidy
-	make -C flyteadmin go-tidy
-	make -C flyteidl go-tidy
-	make -C flytepropeller go-tidy
-	make -C flyteplugins go-tidy
-	make -C flytestdlib go-tidy
-	make -C flytecopilot go-tidy
+	$(MAKE) -C datacatalog go-tidy
+	$(MAKE) -C flyteadmin go-tidy
+	$(MAKE) -C flyteidl go-tidy
+	$(MAKE) -C flytepropeller go-tidy
+	$(MAKE) -C flyteplugins go-tidy
+	$(MAKE) -C flytestdlib go-tidy
+	$(MAKE) -C flytecopilot go-tidy
+
+.PHONY: lint
+lint: #lints the package for common code smells
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
+	GL_DEBUG=linters_output,env find . -type f -name go.mod -maxdepth 3 -execdir golangci-lint run --deadline=5m --exclude deprecated -v \;
