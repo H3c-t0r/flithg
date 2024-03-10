@@ -261,3 +261,92 @@ storage:
   limits:
     maxDownloadMBs: {{ .Values.storage.limits.maxDownloadMBs }}
 {{- end }}
+
+{{/* Generate grpcRoutes for ingress */}}
+{{- define "ingress.grpcRoutes" -}}
+{{- $grpcPort := .Values.configmap.adminServer.server.security.secure | ternary 80 81 -}}
+- path: /flyteidl.service.SignalService
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.SignalService/*
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.AdminService
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.AdminService/*
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.DataProxyService
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.DataProxyService/*
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.AuthMetadataService
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.AuthMetadataService/*
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.IdentityService
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /flyteidl.service.IdentityService/*
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /grpc.health.v1.Health
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+- path: /grpc.health.v1.Health/*
+  pathType: ImplementationSpecific
+  backend:
+    service:
+      name: flyteadmin
+      port:
+        number: {{ $grpcPort }}
+{{- end -}}
