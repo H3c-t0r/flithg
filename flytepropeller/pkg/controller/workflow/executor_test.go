@@ -72,6 +72,10 @@ type fakeRemoteWritePlugin struct {
 	t             assert.TestingT
 }
 
+type fakeNodeExecContext interface {
+	Node()                v1alpha1.ExecutableNode
+}
+
 func (f fakeRemoteWritePlugin) Handle(ctx context.Context, tCtx pluginCore.TaskExecutionContext) (pluginCore.Transition, error) {
 	logger.Infof(ctx, "----------------------------------------------------------------------------------------------")
 	logger.Infof(ctx, "Handle called for %s", tCtx.TaskExecutionMetadata().GetTaskExecutionID().GetGeneratedName())
@@ -222,6 +226,26 @@ func createTaskExecutorErrorInCheck(t assert.TestingT) pluginCore.PluginEntry {
 		LoadPlugin:          f,
 		IsDefault:           true,
 	}
+}
+
+func CountFailedNodes(nodeStatuses map[v1alpha1.NodeID]*v1alpha1.NodeStatus) int {
+	count := 0
+	for _, v := range nodeStatuses {
+		if v.Phase == v1alpha1.NodePhaseFailed {
+			count++
+		}
+	}
+	return count
+}
+
+func CountNodesWithErrors(nodeStatuses map[v1alpha1.NodeID]*v1alpha1.NodeStatus) int {
+	count := 0
+	for _, v := range nodeStatuses {
+		if v.Error != nil {
+			count++
+		}
+	}
+	return count
 }
 
 func TestWorkflowExecutor_HandleFlyteWorkflow_Error(t *testing.T) {
@@ -496,7 +520,17 @@ func TestWorkflowExecutor_HandleFlyteWorkflow_Failing(t *testing.T) {
 
 	h := &nodemocks.NodeHandler{}
 	h.OnAbortMatch(mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	h.OnHandleMatch(mock.Anything, mock.Anything).Return(handler.DoTransition(handler.TransitionTypeEphemeral, handler.PhaseInfoSuccess(nil)), nil)
+
+	// Mock handler marks start-node successfully completed but other nodes as failed
+	startNodeMatcher := mock.MatchedBy(func(nodeExecContext fakeNodeExecContext) bool {
+		return nodeExecContext.Node().IsStartNode()
+	})
+	h.OnHandleMatch(mock.Anything, startNodeMatcher).Return(handler.DoTransition(handler.TransitionTypeEphemeral, handler.PhaseInfoSuccess(nil)), nil)
+	h.OnHandleMatch(mock.Anything, mock.Anything).Return(handler.DoTransition(
+		handler.TransitionTypeEphemeral,
+		handler.PhaseInfoFailureErr(&core.ExecutionError{Code: "code", Message: "message", ErrorUri: "uri"}, nil)), nil,
+	)
+
 	h.OnFinalizeMatch(mock.Anything, mock.Anything).Return(nil)
 	h.OnFinalizeRequired().Return(false)
 
@@ -504,46 +538,66 @@ func TestWorkflowExecutor_HandleFlyteWorkflow_Failing(t *testing.T) {
 	handlerFactory.OnSetupMatch(mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	handlerFactory.OnGetHandlerMatch(mock.Anything).Return(h, nil)
 
-	nodeExec, err := nodes.NewExecutor(ctx, config.GetConfig().NodeConfig, store, enqueueWorkflow, eventSink, adminClient, adminClient,
-		maxOutputSize, "s3://bucket", fakeKubeClient, catalogClient, recoveryClient, eventConfig, testClusterID, signalClient, handlerFactory, promutils.NewTestScope())
-	assert.NoError(t, err)
-	executor, err := NewExecutor(ctx, store, enqueueWorkflow, eventSink, recorder, "", nodeExec, eventConfig, testClusterID, promutils.NewTestScope())
-	assert.NoError(t, err)
-
-	assert.NoError(t, executor.Initialize(ctx))
+	tests := []struct {
+		name                         string
+		onFailurePolicy              v1alpha1.WorkflowOnFailurePolicy
+		enableCRDebugMetadata        bool
+		expectedRoundsToFail         int
+		expectedNodesWithErrorsCount int
+		expectedFailedNodesCount     int
+	}{
+		{"failImidiately", v1alpha1.WorkflowOnFailurePolicy(core.WorkflowMetadata_FAIL_IMMEDIATELY), false, 6, 1, 1},
+		{"failImidiately enableCRDebugMetadata", v1alpha1.WorkflowOnFailurePolicy(core.WorkflowMetadata_FAIL_IMMEDIATELY), true, 6, 1, 1},
+		{"failAfterExecutableNodesComplete", v1alpha1.WorkflowOnFailurePolicy(core.WorkflowMetadata_FAIL_AFTER_EXECUTABLE_NODES_COMPLETE), false, 12, 1, 2},
+		{"failAfterExecutableNodesComplete enableCRDebugMetadata", v1alpha1.WorkflowOnFailurePolicy(core.WorkflowMetadata_FAIL_AFTER_EXECUTABLE_NODES_COMPLETE), true, 12, 2, 2},
+	}
 
 	wJSON, err := yamlutils.ReadYamlFileAsJSON("testdata/benchmark_wf.yaml")
-	if assert.NoError(t, err) {
-		w := &v1alpha1.FlyteWorkflow{
-			RawOutputDataConfig: v1alpha1.RawOutputDataConfig{RawOutputDataConfig: &admin.RawOutputDataConfig{}},
-		}
-		if assert.NoError(t, json.Unmarshal(wJSON, w)) {
-			// For benchmark workflow, we will run into the first failure on round 6
+	assert.NoError(t, err)
+	for _, test := range tests {
 
-			roundsToFail := 8
-			for i := 0; i < roundsToFail; i++ {
-				err := executor.HandleFlyteWorkflow(ctx, w)
-				assert.Nil(t, err, "Round [%v]", i)
-				fmt.Printf("Round[%d] Workflow[%v]\n", i, w.Status.Phase.String())
-				walkAndPrint(w.Connections, w.Status.NodeStatus)
-				for _, v := range w.Status.NodeStatus {
-					// Reset dirty manually for tests.
-					v.ResetDirty()
-				}
-				fmt.Printf("\n")
+		t.Run(test.name, func(t *testing.T) {
+			nodeConfig := config.GetConfig().NodeConfig
+			nodeConfig.EnableCRDebugMetadata = test.enableCRDebugMetadata
+			nodeExec, err := nodes.NewExecutor(ctx, nodeConfig, store, enqueueWorkflow, eventSink, adminClient, adminClient,
+				maxOutputSize, "s3://bucket", fakeKubeClient, catalogClient, recoveryClient, eventConfig, testClusterID, signalClient, handlerFactory, promutils.NewTestScope())
+			assert.NoError(t, err)
+			executor, err := NewExecutor(ctx, store, enqueueWorkflow, eventSink, recorder, "", nodeExec, eventConfig, testClusterID, promutils.NewTestScope())
+			assert.NoError(t, err)
+			assert.NoError(t, executor.Initialize(ctx))
 
-				if i == roundsToFail-1 {
-					assert.Equal(t, v1alpha1.WorkflowPhaseFailed, w.Status.Phase)
-				} else if i == roundsToFail-2 {
-					assert.Equal(t, v1alpha1.WorkflowPhaseHandlingFailureNode, w.Status.Phase)
-				} else {
-					assert.NotEqual(t, v1alpha1.WorkflowPhaseFailed, w.Status.Phase, "For Round [%v] got phase [%v]", i, w.Status.Phase.String())
-				}
-
+			w := &v1alpha1.FlyteWorkflow{
+				RawOutputDataConfig: v1alpha1.RawOutputDataConfig{RawOutputDataConfig: &admin.RawOutputDataConfig{}},
+				WorkflowSpec:        &v1alpha1.WorkflowSpec{OnFailurePolicy: test.onFailurePolicy},
 			}
+			if assert.NoError(t, json.Unmarshal(wJSON, w)) {
 
-			assert.Equal(t, v1alpha1.WorkflowPhaseFailed.String(), w.Status.Phase.String(), "Message: [%v]", w.Status.Message)
-		}
+				for i := 0; i < test.expectedRoundsToFail; i++ {
+					t.Run(fmt.Sprintf("Round[%d]", i), func(t *testing.T) {
+						err := executor.HandleFlyteWorkflow(ctx, w)
+						assert.Nil(t, err, "Round [%v]", i)
+						fmt.Printf("Round[%d] Workflow[%v]\n", i, w.Status.Phase.String())
+						walkAndPrint(w.Connections, w.Status.NodeStatus)
+						for _, v := range w.Status.NodeStatus {
+							// Reset dirty manually for tests.
+							v.ResetDirty()
+						}
+						fmt.Printf("\n")
+
+						if i == test.expectedRoundsToFail-1 {
+							assert.Equal(t, v1alpha1.WorkflowPhaseFailed, w.Status.Phase)
+						} else if i == test.expectedRoundsToFail-2 {
+							assert.Equal(t, v1alpha1.WorkflowPhaseHandlingFailureNode, w.Status.Phase)
+						} else {
+							assert.NotEqual(t, v1alpha1.WorkflowPhaseFailed, w.Status.Phase, "For Round [%v] got phase [%v]", i, w.Status.Phase.String())
+						}
+					})
+				}
+				assert.Equal(t, test.expectedFailedNodesCount, CountFailedNodes(w.Status.NodeStatus))
+				assert.Equal(t, test.expectedNodesWithErrorsCount, CountNodesWithErrors(w.Status.NodeStatus))
+				assert.Equal(t, v1alpha1.WorkflowPhaseFailed.String(), w.Status.Phase.String(), "Message: [%v]", w.Status.Message)
+			}
+		})
 	}
 	assert.True(t, recordedRunning)
 	assert.True(t, recordedFailing)
