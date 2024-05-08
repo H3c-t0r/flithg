@@ -85,4 +85,18 @@ pyflyte run --remote \
   slope --x '[-3,0,3]' --y '[7,4,-2]'
 ```
 
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+task_parameters
+decorating_tasks
+task_caching
+named_outputs
+shell_tasks
+map_tasks
+task_software_environment/index
+task_hardware_environment/index
+```
+
 [flytesnacks]: https://github.com/flyteorg/flytesnacks/tree/master/examples/basics/
