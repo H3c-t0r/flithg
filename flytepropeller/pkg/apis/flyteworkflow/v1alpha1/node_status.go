@@ -111,10 +111,10 @@ func (in *DynamicNodeStatus) GetDynamicNodeReason() string {
 }
 
 func (in *DynamicNodeStatus) GetExecutionError() *core.ExecutionError {
-	if in.Error == nil {
-		return nil
+	if in.Error != nil {
+		return in.Error.ExecutionError
 	}
-	return in.Error.ExecutionError
+	return nil
 }
 
 func (in *DynamicNodeStatus) GetIsFailurePermanent() bool {
@@ -137,9 +137,7 @@ func (in *DynamicNodeStatus) SetDynamicNodePhase(phase DynamicNodePhase) {
 
 func (in *DynamicNodeStatus) SetExecutionError(err *core.ExecutionError) {
 	if err != nil {
-		in.Error = &ExecutionError{ExecutionError: err}
-	} else {
-		in.Error = nil
+		in.Error = &ExecutionError{err}
 	}
 }
 
@@ -170,19 +168,22 @@ const (
 
 type WorkflowNodeStatus struct {
 	MutableStruct
-	Phase          WorkflowNodePhase    `json:"phase,omitempty"`
-	ExecutionError *core.ExecutionError `json:"executionError,omitempty"`
+	Phase          WorkflowNodePhase `json:"phase,omitempty"`
+	ExecutionError *ExecutionError   `json:"executionError,omitempty"`
 }
 
 func (in *WorkflowNodeStatus) SetExecutionError(executionError *core.ExecutionError) {
-	if in.ExecutionError != executionError {
+	if in.ExecutionError != nil && in.ExecutionError.ExecutionError != executionError {
 		in.SetDirty()
-		in.ExecutionError = executionError
+		in.ExecutionError.ExecutionError = executionError
 	}
 }
 
 func (in *WorkflowNodeStatus) GetExecutionError() *core.ExecutionError {
-	return in.ExecutionError
+	if in.ExecutionError != nil {
+		return in.ExecutionError.ExecutionError
+	}
+	return nil
 }
 
 func (in *WorkflowNodeStatus) GetWorkflowNodePhase() WorkflowNodePhase {
@@ -231,7 +232,7 @@ const (
 type ArrayNodeStatus struct {
 	MutableStruct
 	Phase                 ArrayNodePhase        `json:"phase,omitempty"`
-	ExecutionError        *core.ExecutionError  `json:"executionError,omitempty"`
+	ExecutionError        *ExecutionError       `json:"executionError,omitempty"`
 	SubNodePhases         bitarray.CompactArray `json:"subphase,omitempty"`
 	SubNodeTaskPhases     bitarray.CompactArray `json:"subtphase,omitempty"`
 	SubNodeRetryAttempts  bitarray.CompactArray `json:"subattempts,omitempty"`
@@ -251,13 +252,16 @@ func (in *ArrayNodeStatus) SetArrayNodePhase(phase ArrayNodePhase) {
 }
 
 func (in *ArrayNodeStatus) GetExecutionError() *core.ExecutionError {
-	return in.ExecutionError
+	if in.ExecutionError != nil {
+		return in.ExecutionError.ExecutionError
+	}
+	return nil
 }
 
 func (in *ArrayNodeStatus) SetExecutionError(executionError *core.ExecutionError) {
-	if in.ExecutionError != executionError {
+	if in.ExecutionError != nil && in.ExecutionError.ExecutionError != executionError {
 		in.SetDirty()
-		in.ExecutionError = executionError
+		in.ExecutionError.ExecutionError = executionError
 	}
 }
 
