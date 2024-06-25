@@ -177,6 +177,8 @@ type NodeSpec struct {
 	Interruptible *bool `json:"interruptible,omitempty"`
 
 	ContainerImage string `json:"containerImage,omitempty"`
+
+	OverrideSecurityContext *core.SecurityContext `json:"overrideSecurityContext,omitempty" protobuf:"bytes,27,opt,name=overrideSecurityContext"`
 }
 
 func (in *NodeSpec) GetName() string {
@@ -278,4 +280,8 @@ func (in *NodeSpec) GetInputBindings() []*Binding {
 
 func (in *NodeSpec) GetContainerImage() string {
 	return in.ContainerImage
+}
+
+func (in *NodeSpec) GetOverrideSecurityContext() *core.SecurityContext {
+	return in.OverrideSecurityContext
 }
