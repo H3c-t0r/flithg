@@ -9328,6 +9328,9 @@ export namespace flyteidl {
 
             /** TaskExecutionMetadata identity */
             identity?: (flyteidl.core.IIdentity|null);
+
+            /** TaskExecutionMetadata principal */
+            principal?: (string|null);
         }
 
         /** Represents a TaskExecutionMetadata. */
@@ -9371,6 +9374,9 @@ export namespace flyteidl {
 
             /** TaskExecutionMetadata identity. */
             public identity?: (flyteidl.core.IIdentity|null);
+
+            /** TaskExecutionMetadata principal. */
+            public principal: string;
 
             /**
              * Creates a new TaskExecutionMetadata instance using the specified properties.
