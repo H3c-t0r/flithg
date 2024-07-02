@@ -40,7 +40,7 @@ type ResourceWrapper struct {
 	Phase flyteIdl.TaskExecution_Phase
 	// Deprecated: Please Use Phase instead.
 	State    admin.State
-	Outputs  *flyteIdl.LiteralMap
+	Outputs  *flyteIdl.OutputData
 	Message  string
 	LogLinks []*flyteIdl.TaskLog
 }
@@ -91,6 +91,7 @@ func (p *Plugin) Create(ctx context.Context, taskCtx webapi.TaskExecutionContext
 			Inputs:           taskCtx.InputReader(),
 			OutputPath:       taskCtx.OutputWriter(),
 			Task:             taskCtx.TaskReader(),
+			Runtime:          taskTemplate.GetMetadata().GetRuntime(),
 		}
 		argTemplate = taskTemplate.GetContainer().Args
 		modifiedArgs, err := template.Render(ctx, taskTemplate.GetContainer().Args, templateParameters)
@@ -368,6 +369,7 @@ func writeOutput(ctx context.Context, taskCtx webapi.StatusContext, outputs *fly
 		logger.Debugf(ctx, "AgentDeployment didn't return any output, assuming file based outputs.")
 		opReader = ioutils.NewRemoteFileOutputReader(ctx, taskCtx.DataStore(), taskCtx.OutputWriter(), 0)
 	}
+
 	return taskCtx.OutputWriter().Put(ctx, opReader)
 }
 

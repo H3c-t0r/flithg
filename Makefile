@@ -136,6 +136,15 @@ go-tidy:
 	make -C flytestdlib go-tidy
 	make -C flytecopilot go-tidy
 
+.PHONY: gen
+gen:
+	make -C flyteidl generate
+	make -C flyteadmin generate
+	make -C flytepropeller generate
+	make -C flyteplugins generate
+	make -C flytestdlib generate
+	make -C flytecopilot generate
+
 .PHONY: lint-helm-charts
 lint-helm-charts:
 	# This pressuposes that you have act installed
@@ -148,3 +157,4 @@ spellcheck:
 .PHONY: clean
 clean: ## Remove the HTML files related to the Flyteconsole and Makefile
 	rm -rf cmd/single/dist .tmp_build
+>>>>>>> 2407e906c9efc2b5b3bb26bf1fe298277abf4a62
